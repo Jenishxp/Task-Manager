@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .input-section {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .input-section input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+        
+        .input-section select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-right: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .input-section button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .input-section button:hover {
+            background-color: #45a049;
+        }
+        
+        .search-section {
+            margin-bottom: 20px;
+        }
+        
+        .search-section input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .task-list {
+            list-style: none;
+        }
+        
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background-color: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 5px solid #4CAF50;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .task-checkbox {
+            margin-right: 10px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        
+        .task-text {
+            flex: 1;
+        }
+        
+        /* Completed task styling */
+        .completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+        
+        /* Priority styling */
+        .priority-low {
+            border-left-color: #4CAF50;
+        }
+        
+        .priority-medium {
+            border-left-color: #FFA500;
+        }
+        
+        .priority-high {
+            border-left-color: #f44336;
+        }
+        
+        .task-date {
+            color: #888;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        .priority-dropdown {
+            margin-right: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .clear-completed {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .clear-completed:hover {
+            background-color: #d32f2f;
+        }
+        
+        .refresh-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #0b7dda;
+        }
+        
+        .empty-list {
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .stats {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+        
+        .server-status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .online {
+            color: #4CAF50;
+        }
+        
+        .offline {
+            color: #f44336;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Manager</h1>
+        
+        <div class="input-section">
+            <input type="text" id="task-input" placeholder="Add a new task...">
+            <select id="priority-select" class="priority-dropdown">
+                <option value="low">Low Priority</option>
+                <option value="medium" selected>Medium Priority</option>
+                <option value="high">High Priority</option>
+            </select>
+            <button id="add-btn">Add Task</button>
+        </div>
+        
+        <div class="search-section">
+            <input type="text" id="search-input" placeholder="Search tasks...">
+        </div>
+        
+        <ul id="task-list" class="task-list">
+            <li class="loading">
+                <div class="spinner"></div>
+                Loading tasks...
+            </li>
+        </ul>
+        
+        <div class="action-buttons">
+            <button id="clear-completed" class="action-btn clear-completed">Clear Completed</button>
+            <button id="refresh-btn" class="action-btn refresh-btn">Refresh Tasks</button>
+        </div>
+        
+        <div class="stats" id="stats">
+            Total tasks: 0
+        </div>
+        
+        <div class="server-status" id="server-status">
+            Server: Connecting...
+        </div>
+    </div>
+
+    <script>
+        // API URL - change this to your MongoDB server URL
+        const API_URL = 'http://localhost:5000/api/tasks';
+        
+        // DOM Elements
+        const taskInput = document.getElementById('task-input');
+        const prioritySelect = document.getElementById('priority-select');
+        const addBtn = document.getElementById('add-btn');
+        const taskList = document.getElementById('task-list');
+        const searchInput = document.getElementById('search-input');
+        const clearCompletedBtn = document.getElementById('clear-completed');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const statsElement = document.getElementById('stats');
+        const serverStatusElement = document.getElementById('server-status');
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Add task button
+            addBtn.addEventListener('click', addTask);
+            
+            // Enter key to add task
+            taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+            
+            // Search input
+            searchInput.addEventListener('input', searchTasks);
+            
+            // Clear completed button
+            clearCompletedBtn.addEventListener('click', clearCompletedTasks);
+            
+            // Refresh button
+            refreshBtn.addEventListener('click', fetchTasks);
+        }
+        
+        // Initialize app
+        async function initApp() {
+            setupEventListeners();
+            await checkServerStatus();
+            await fetchTasks();
+        }
+        
+        // Check server status
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(API_URL);
+                
+                if (response.ok) {
+                    serverStatusElement.textContent = 'Server: Online';
+                    serverStatusElement.className = 'server-status online';
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (error) {
+                serverStatusElement.textContent = 'Server: Offline';
+                serverStatusElement.className = 'server-status offline';
+                console.error('Server connection error:', error);
+            }
+        }
+        
+        // Fetch all tasks
+        async function fetchTasks() {
+            showLoading();
+            
+            try {
+                const response = await fetch(API_URL);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch tasks');
+                }
+                
+                const tasks = await response.json();
+                renderTasks(tasks);
+                updateStats(tasks.length);
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                showError('Failed to load tasks. Please check your server connection.');
+            }
+        }
+        
+        // Add a new task
+        async function addTask() {
+            const text = taskInput.value.trim();
+            const priority = prioritySelect.value;
+            
+            if (text === '') return;
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, priority })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to add task');
+                }
+                
+                const newTask = await response.json();
+                
+                // Clear input
+                taskInput.value = '';
+                
+                // Fetch all tasks to refresh the list
+                await fetchTasks();
+                
+            } catch (error) {
+                console.error('Error adding task:', error);
+                alert('Failed to add task. Please try again.');
+            }
+        }
+        
+        // Toggle task completion
+        async function toggleTaskCompletion(id, completed) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ completed })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update task');
+                }
+                
+            } catch (error) {
+                console.error('Error updating task:', error);
+                alert('Failed to update task. Please try again.');
+                // Revert the UI change
+                const checkbox = document.querySelector(`[data-id="${id}"] .task-checkbox`);
+                if (checkbox) {
+                    checkbox.checked = !completed;
+                }
+            }
+        }
+        
+        // Update task priority
+        async function updateTaskPriority(id, priority) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ priority })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update task priority');
+                }
+                
+            } catch (error) {
+                console.error('Error updating task priority:', error);
+                alert('Failed to update task priority. Please try again.');
+            }
+        }
+        
+        // Delete a task
+        async function deleteTask(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to delete task');
+                }
+                
+                // Remove task from DOM
+                const taskElement = document.querySelector(`[data-id="${id}"]`);
+                if (taskElement) {
+                    taskElement.remove();
+                    
+                    // Update stats
+                    const tasks = document.querySelectorAll('.task-item').length;
+                    updateStats(tasks);
+                }
+                
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                alert('Failed to delete task. Please try again.');
+            }
+        }
+        
+        // Search tasks
+        async function searchTasks() {
+            const query = searchInput.value.trim();
+            
+            if (query === '') {
+                await fetchTasks();
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to search tasks');
+                }
+                
+                const tasks = await response.json();
+                renderTasks(tasks);
+                updateStats(tasks.length);
+                
+            } catch (error) {
+                console.error('Error searching tasks:', error);
+                showError('Failed to search tasks. Please try again.');
+            }
+        }
+        
+        // Clear completed tasks
+        async function clearCompletedTasks() {
+            if (!confirm('Are you sure you want to delete all completed tasks?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/completed`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to clear completed tasks');
+                }
+                
+                const result = await response.json();
+                alert(result.message);
+                
+                // Refresh tasks
+                await fetchTasks();
+                
+            } catch (error) {
+                console.error('Error clearing completed tasks:', error);
+                alert('Failed to clear completed tasks. Please try again.');
+            }
+        }
+        
+        // Render tasks
+        function renderTasks(tasks) {
+            taskList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                const emptyMsg = document.createElement('li');
+                emptyMsg.className = 'empty-list';
+                emptyMsg.textContent = 'No tasks found. Add one above!';
+                taskList.appendChild(emptyMsg);
+                return;
+            }
+            
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = `task-item priority-${task.priority}`;
+                li.setAttribute('data-id', task._id);
+                
+                if (task.completed) {
+                    li.classList.add('completed');
+                }
+                
+                li.innerHTML = `
+                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                    <div class="task-text">${task.text}</div>
+                    <span class="task-date">${new Date(task.createdAt).toLocaleString()}</span>
+                    <select class="priority-dropdown">
+                        <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low</option>
+                        <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                        <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High</option>
+                    </select>
+                    <button class="delete-btn">Delete</button>
+                `;
+                
+                // Setup event listeners for task item
+                setupTaskEventListeners(li, task._id);
+                
+                taskList.appendChild(li);
+            });
+        }
+        
+        // Setup event listeners for a task item
+        function setupTaskEventListeners(taskElement, taskId) {
+            // Checkbox - toggle completion
+            const checkbox = taskElement.querySelector('.task-checkbox');
+            checkbox.addEventListener('change', () => {
+                const completed = checkbox.checked;
+                taskElement.classList.toggle('completed', completed);
+                toggleTaskCompletion(taskId, completed);
+            });
+            
+            // Priority dropdown
+            const priorityDropdown = taskElement.querySelector('.priority-dropdown');
+            priorityDropdown.addEventListener('change', () => {
+                const priority = priorityDropdown.value;
+                
+                // Remove all priority classes
+                taskElement.classList.remove('priority-low', 'priority-medium', 'priority-high');
+                
+                // Add new priority class
+                taskElement.classList.add(`priority-${priority}`);
+                
+                // Update in database
+                updateTaskPriority(taskId, priority);
+            });
+            
+            // Delete button
+            const deleteBtn = taskElement.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this task?')) {
+                    deleteTask(taskId);
+                }
+            });
+        }
+        
+        // Update stats
+        function updateStats(taskCount) {
+            statsElement.textContent = `Total tasks: ${taskCount}`;
+        }
+        
+        // Show loading state
+        function showLoading() {
+            taskList.innerHTML = `
+                <li class="loading">
+                    <div class="spinner"></div>
+                    Loading tasks...
+                </li>
+            `;
+        }
+        
+        // Show error message
+        function showError(message) {
+            taskList.innerHTML = `
+                <li class="empty-list">
+                    <div style="color: #f44336;">${message}</div>
+                </li>
+            `;
+        }
+    </script>
+</body>
+</html>
