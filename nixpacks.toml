@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["nodejs", "yarn"]
+
+[start]
+cmd = "cd backend && node server.js"
