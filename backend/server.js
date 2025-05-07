@@ -1,22 +1,31 @@
-// Backend: server.js
+// Add this near the top of your server.js file
+// to ensure proper port binding and environment variables
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
+// Most important part: Use Railway's PORT environment variable
 const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI)
+// If deploying frontend and backend together, serve static files
+// From the frontend directory (relative to server.js location)
+app.use(express.static(path.join(__dirname, '..', 'frontend')));
+
+// MongoDB Connection with proper error handling
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/taskManager')
   .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    // Don't crash the server on DB connection error
+  });
 
 // Task Schema and Model
 const taskSchema = new mongoose.Schema({
@@ -44,7 +53,12 @@ const Task = mongoose.model('Task', taskSchema);
 
 // API Routes
 
-// Get all tasks
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// Rest of your routes...
 app.get('/api/tasks', async (req, res) => {
   try {
     const tasks = await Task.find().sort({ createdAt: -1 });
@@ -107,31 +121,14 @@ app.delete('/api/tasks/:id', async (req, res) => {
   }
 });
 
-// Search tasks
-app.get('/api/tasks/search', async (req, res) => {
-  try {
-    const searchQuery = req.query.q;
-    const tasks = await Task.find({
-      text: { $regex: searchQuery, $options: 'i' }
-    });
-    
-    res.json(tasks);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+// Serve frontend for any other route if deploying frontend with backend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
 });
 
-// Clear completed tasks
-app.delete('/api/tasks/completed', async (req, res) => {
-  try {
-    const result = await Task.deleteMany({ completed: true });
-    res.json({ message: `${result.deletedCount} completed tasks deleted` });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// Start server
-app.listen(PORT, () => {
+// Start server with proper error handling
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+}).on('error', (err) => {
+  console.error('Server failed to start:', err);
 });
